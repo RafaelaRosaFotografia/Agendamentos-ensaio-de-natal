@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rafaela Rosa Fotografia — Agenda e Pagamento</title>
+<style>
+:root{
+  --bg:#ffffff;
+  --text:#0b0b0b;
+  --accent:#b71c1c;
+  --brown:#7a4a2f;
+  --muted:#666;
+  --slot-bg:#fafafa;
+  --slot-weekend:#fff7f7;
+  --slot-border:#eee;
+  --card-shadow:0 6px 18px rgba(11,11,11,0.08);
+  --disabled:#dcdcdc;
+}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;margin:0;background:var(--bg);color:var(--text);}
+.carousel{width:100%;display:flex;justify-content:center;overflow:hidden;position:relative;}
+.carousel img{width:100%;max-height:520px;object-fit:cover;position:absolute;opacity:0;transition:opacity 1.5s ease-in-out;}
+.carousel img.active{opacity:1;position:relative;}
+main{max-width:980px;margin:28px auto;padding:0 18px;}
+.grid{display:grid;grid-template-columns:1fr 360px;gap:28px;}
+
+/* Estilos para o container de datas em telas maiores */
+.dates{display:flex;flex-direction:column;gap:12px;max-height:62vh;overflow:auto;padding-right:6px;}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr; /* Coloca os cards em coluna */
+    gap:18px; /* Reduz o espaçamento */
+  }
+  /* Remove as restrições de altura e rolagem do container de datas no celular */
+  .dates{
+    max-height:none;
+    overflow:visible;
+    padding-right:0;
+  }
+}
+
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:var(--card-shadow);margin-bottom:14px;}
+.day{border-radius:10px;padding:12px;border:1px solid #f3f3f3;}
+.day h4{margin:0 0 8px 0;font-size:15px;color:var(--brown);}
+.slots{display:flex;flex-wrap:wrap;gap:8px;}
+.slot{padding:8px 12px;border-radius:8px;background:var(--slot-bg);cursor:pointer;border:1px solid var(--slot-border);font-size:14px;color:var(--text);}
+.slot.weekend{background:var(--slot-weekend);border-color:#f1d0d0;}
+.slot.selected{outline:3px solid rgba(183,28,28,0.12);}
+.slot.reserved{background:var(--disabled);color:#777;cursor:not-allowed;}
+.btn{display:block;width:100%;text-align:center;padding:12px;border:none;border-radius:10px;margin-top:8px;background:var(--accent);color:#fff;text-decoration:none;font-size:16px;cursor:pointer;}
+.btn.secondary{background:var(--brown);}
+.note{font-size:14px;color:var(--muted);}
+#paymentSection{display:none;margin-top:20px;}
+</style>
+</head>
+<body>
+<div class="carousel">
+  <img src="WhatsApp Image 2025-10-05 at 01.43.53.jpeg" class="active" alt="Foto 1">
+  <img src="WhatsApp Image 2025-10-05 at 01.43.53 (2).jpeg" alt="Foto 2">
+  <img src="WhatsApp Image 2025-10-05 at 01.43.53 (3).jpeg" alt="Foto 3">
+</div>
+
+<main>
+  <div class="grid">
+    <section>
+      <div class="card">
+        <p class="note">Clique em um horário para reservar. Fim de semana: <strong>09:30, 10:30, 14:00, 15:30, 16:30</strong>. Dias de semana: <strong>10:00, 14:00, 15:30, 17:00, 19:30</strong>.</p>
+      </div>
+      <div class="card dates" id="dates"></div>
+    </section>
+
+    <aside>
+      <div class="card chosen">
+        <h3>Reserva Selecionada</h3>
+        <p id="chosenSlot">Nenhum horário selecionado</p>
+        <div id="paymentSection">
+          <p class="note">Valor do ensaio: R$300,00. Cartão pode ter acréscimo.</p>
+          <div class="card">
+            <strong>Pix – metade do valor (R$150,00)</strong>
+            <p>Chave Pix: <strong>42998213495</strong></p>
+            <a id="pixHalf" class="btn" href="#" target="_blank">Pagar via Pix (R$150,00)</a>
+          </div>
+          <div class="card">
+            <strong>Pix – valor total (R$300,00)</strong>
+            <p>Chave Pix: <strong>42998213495</strong></p>
+            <a id="pixFull" class="btn" href="#" target="_blank">Pagar via Pix (R$300,00)</a>
+          </div>
+          <div class="card">
+            <strong>Cartão – valor total parcelado em 2x</strong>
+            <a href="https://mpago.li/2V6JjKZ" target="_blank" class="btn">Pagar cartão 2x R$300,00</a>
+          </div>
+          <div class="card">
+            <strong>Cartão – metade do valor parcelado em 2x</strong>
+            <a href="https://mpago.li/27qyufD" target="_blank" class="btn">Pagar cartão 2x R$150,00</a>
+          </div>
+          <div class="card">
+            <strong>Boleto / Contato</strong>
+            <p>Entre em contato pelo WhatsApp para gerar boleto ou dúvidas.</p>
+            <a href="https://wa.me/5542998213495" target="_blank" class="btn secondary">Contato via WhatsApp</a>
+          </div>
+          <button id="confirmPayment" class="btn">Confirmar pagamento</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script>
+// Carrossel automático
+const images=document.querySelectorAll('.carousel img');
+let index=0;
+setInterval(()=>{
+  images[index].classList.remove('active');
+  index=(index+1)%images.length;
+  images[index].classList.add('active');
+},5000);
+
+// Agenda e reservas
+const start=new Date(2025,10,8);
+const end=new Date(2025,11,20);
+const weekdaySlots=['10:00','14:00','15:30','17:00','19:30'];
+const weekendSlots=['09:30','10:30','14:00','15:30','16:30'];
+const blockedDates=['22/11/2025'];
+const datesEl=document.getElementById('dates');
+const chosenSlotEl=document.getElementById('chosenSlot');
+const paymentSection=document.getElementById('paymentSection');
+
+function isWeekend(d){return d.getDay()===0||d.getDay()===6;}
+function fmtDate(d){return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function dayNamePt(d){return d.toLocaleDateString('pt-BR',{weekday:'long'});}
+function capitalize(txt){return txt.charAt(0).toUpperCase()+txt.slice(1);}
+
+function loadReserved(){return JSON.parse(localStorage.getItem('reservedSlots')||'[]');}
+function saveReserved(list){localStorage.setItem('reservedSlots',JSON.stringify(list));}
+function isReserved(date,time){return loadReserved().some(s=>s.date===date&&s.time===time);}
+
+function generate(){
+  let cur=new Date(start);
+  while(cur<=end){
+    const d=new Date(cur);
+    const dateStr=fmtDate(d);
+    const dayDiv=document.createElement('div');
+    dayDiv.className='day';
+    const h=document.createElement('h4');
+    h.textContent=`${capitalize(dayNamePt(d))} — ${dateStr}`;
+    dayDiv.appendChild(h);
+
+    const slotsWrap=document.createElement('div');
+    slotsWrap.className='slots';
+
+    if(blockedDates.includes(dateStr)){
+      const msg=document.createElement('p');
+      msg.textContent='Data indisponível';
+      msg.style.color='var(--muted)';
+      slotsWrap.appendChild(msg);
+    }else{
+      const list=isWeekend(d)?weekendSlots:weekdaySlots;
+      list.forEach(s=>{
+        const btn=document.createElement('button');
+        btn.className='slot'+(isWeekend(d)?' weekend':'');
+        btn.type='button';
+        btn.textContent=isReserved(dateStr,s)?'🔒 Reservado':s;
+        if(isReserved(dateStr,s)){
+          btn.classList.add('reserved');
+          btn.disabled=true;
+        }else{
+          btn.onclick=()=>selectSlot(d,s,btn);
+        }
+        slotsWrap.appendChild(btn);
+      });
+    }
+
+    dayDiv.appendChild(slotsWrap);
+    datesEl.appendChild(dayDiv);
+    cur.setDate(cur.getDate()+1);
+  }
+}
+
+let currentSelection=null;
+function selectSlot(date,time,btnEl){
+  document.querySelectorAll('.slot').forEach(x=>x.classList.remove('selected'));
+  btnEl.classList.add('selected');
+  const formatted=`${fmtDate(date)} — ${time}`;
+  chosenSlotEl.textContent=formatted;
+  paymentSection.style.display='block';
+
+  const pixHalf='https://api.whatsapp.com/send?phone=5542998213495&text=Olá!%20Vou%20enviar%20Pix%20metade%20do%20valor%20(R$150)%20para%20reservar%20o%20ensaio%20de%20Natal%20na%20data%20'+encodeURIComponent(fmtDate(date))+'%20às%20'+encodeURIComponent(time);
+  const pixFull='https://api.whatsapp.com/send?phone=5542998213495&text=Olá!%20Vou%20enviar%20Pix%20valor%20total%20(R$300)%20para%20reservar%20o%20ensaio%20de%20Natal%20na%20data%20'+encodeURIComponent(fmtDate(date))+'%20às%20'+encodeURIComponent(time);
+  document.getElementById('pixHalf').href=pixHalf;
+  document.getElementById('pixFull').href=pixFull;
+  currentSelection={date:fmtDate(date),time:time};
+}
+
+document.getElementById('confirmPayment').addEventListener('click',()=>{
+  if(currentSelection){
+    const list=loadReserved();
+    if(!isReserved(currentSelection.date,currentSelection.time)){
+      list.push(currentSelection);
+      saveReserved(list);
+      alert('Pagamento confirmado! Horário reservado com sucesso.');
+      location.reload();
+    }
+  }else{
+    alert('Selecione um horário antes de confirmar o pagamento.');
+  }
+});
+
+generate();
+</script>
+</body>
+</html>
